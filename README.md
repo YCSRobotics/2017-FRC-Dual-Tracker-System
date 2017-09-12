@@ -4,7 +4,17 @@
 	and a RaspberryPi3 but can be easily changed to work with USB cameras. Code can be
 	run on any co-processor with python and opencv capabilities.
 
-## Program Goals:
+## Modification:
+	*See Wiki
+	
+## **The code was used in a virtual environment with the following installed:**
+	*Python 3.4 (Programming Language)
+	*OpenCV 3.1.0 (Vision Tracking Library)
+	*Numpy (Managing numpy arrays from OpenCV)
+	*PyNetworkTables (Sending and Receiving Data)
+	*imutils (Easy way for camera multithreading)
+
+## Program Goals: <br/>
 	*Code is completely modular and adaptable.
 	*Code is simple to use and well commented.
 	*Code is reusable.
