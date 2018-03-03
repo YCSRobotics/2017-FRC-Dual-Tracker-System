@@ -14,9 +14,9 @@ while(True):
     
     #grab selection of target from roborio
     if(PiState == 0):
-        tracker.trackPeg()
+        tracker.trackCube()
     elif(PiState == 1):
-        tracker.trackTower()
+        tracker.trackTape()
     elif(PiState == -1):
         break
     else:

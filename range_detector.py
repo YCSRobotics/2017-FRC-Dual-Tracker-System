@@ -24,7 +24,7 @@ cv2.createTrackbar('H (max)', "Trackbars", maxHVal, 255, callback)
 cv2.createTrackbar('S (max)', "Trackbars", maxSVal, 255, callback)
 cv2.createTrackbar('V (max)', "Trackbars", maxVVal, 255, callback)
 
-camera = cv2.VideoCapture('http://10.4.70.11/mjpg/video.mjpg')
+camera = cv2.VideoCapture(1)
 
 while True:
     minHVal = cv2.getTrackbarPos('H (min)', "Trackbars")

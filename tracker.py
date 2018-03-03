@@ -12,15 +12,19 @@ logging.basicConfig(level=logging.DEBUG)
 
 #grab frames using multithreading
 #and initialize the camera
-vs0 = WebcamVideoStream(src=constants.PegStream).start()
-vs1 = WebcamVideoStream(src=constants.TowerStream).start()
+vs0 = WebcamVideoStream(src=constants.CubeStream).start()
+vs1 = WebcamVideoStream(src=constants.TapeStream).start()
 
-NetworkTables.setClientMode()
 NetworkTables.initialize(server=constants.ServerIP)
 Table = NetworkTables.getTable(constants.MainTable)
     
-def trackPeg():
+def trackCube():
     while (True):
+    
+        k = cv2.waitKey(1) & 0xFF
+        # press 'q' to exit
+        if k == ord('q'):
+            break
 
         if(Table.getNumber("PiState", 0) != 0):
             break
@@ -34,7 +38,66 @@ def trackPeg():
         hsv = cv2.cvtColor(frame0, cv2.COLOR_BGR2HSV)
 
         #create the range of colour min/max
-        green_range = cv2.inRange(hsv, constants.peg_green_lower, constants.peg_green_upper)
+        green_range = cv2.inRange(hsv, constants.cube_green_lower, constants.cube_green_upper)
+
+        #create blank area for sort
+        areaArray = []
+        try:
+            #grab all contours based on colour range
+            b, contours, _ = cv2.findContours(green_range, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+     
+            if len(contours) > 0: 
+        
+                 #find biggest contour, mark it
+                 green=max(contours, key=cv2.contourArea)
+                 (xg,yg,wg,hg) = cv2.boundingRect(green)
+                 
+                 #find aspect ratio of contour
+                 aspect_ratio1 = float(wg)/hg
+				 
+                 #put aspect ratio for debug
+                 Table.putNumber("CubeAspectRation", aspect_ratio1)
+                 
+                 #only run if contour is within ratioValues
+                 if aspect_ratio1 <= constants.cube_ratioMax and aspect_ratio1 >= constants.cube_ratioMin:
+
+                     #make the largest values always right rect
+                     #this prevents negative values when not wanted
+                     CenterOfTarget = (xg+wg)/2
+                     TargetWidth = (xg+wg)
+
+                     #put values to networktable
+                     Table.putNumber("CubeWidth", TargetWidth)
+                     Table.putNumber("CubeCenterOfTarget", CenterOfTarget)
+                     Table.putBoolean("CubeNoContoursFound", False)
+                     
+                 else: #contour not in aspect ratio
+                     Table.putBoolean("CubeNoContoursFound", True)
+
+        except IndexError: #no contours found
+            Table.putBoolean("CubeNoContoursFound", True)
+            
+def trackTape():
+    while (True):
+    
+        k = cv2.waitKey(1) & 0xFF
+        # press 'q' to exit
+        if k == ord('q'):
+            break
+
+        if(Table.getNumber("PiState", 0) != 0):
+            break
+        else:
+            pass
+
+        #grab current frame from multithreaded process
+        frame0 = vs0.read()
+        
+        #convert to HSV
+        hsv = cv2.cvtColor(frame0, cv2.COLOR_BGR2HSV)
+
+        #create the range of colour min/max
+        green_range = cv2.inRange(hsv, constants.tape_green_lower, constants.tape_green_upper)
 
         #create blank area for sort
         areaArray = []
@@ -66,13 +129,12 @@ def trackPeg():
                  aspect_ratio1 = float(wg)/hg
                  aspect_ratio2 = float(w)/h
 
-                 #set min and max ratios
-                 ratioMax = 0.75
-                 ratioMin = 0.30
+                 Table.putNumber("TapeAspectRatio1", aspect_ratio1)
+                 Table.putNumber("TapeAspectRatio2", aspect_ratio2)
                  
                  #only run if contour is within ratioValues
-                 if (aspect_ratio1 and aspect_ratio2 <= constants.peg_ratioMax 
-				 and aspect_ratio1 and aspect_ratio2 >= constants.peg_ratioMin):
+                 if (aspect_ratio1 and aspect_ratio2 <= constants.tape_ratioMax 
+				 and aspect_ratio1 and aspect_ratio2 >= constants.tape_ratioMin):
 
                      #make the largest values always right rect
                      #this prevents negative values when not wanted
@@ -82,69 +144,21 @@ def trackPeg():
                         CenterOfTarget = (x-xg+wg)/2
 
                      if x < (xg+w):
-                        CenterOfTargetCoords = (x+CenterOfTarget)
+                        TapeWidth = (x+CenterOfTarget)
                      else:
-                        CenterOfTargetCoords = (xg+w+CenterOfTarget)
+                        TapeWidth = (xg+w+CenterOfTarget)
 
                      #put values to networktable
-                     Table.putNumber("PegCenterOfTargetCoords", CenterOfTargetCoords)
-                     Table.putNumber("PegCenterOfTarget", CenterOfTarget)
-                     Table.putBoolean("PegNoContoursFound", False)
+                     Table.putNumber("TapeWidth", TapeWidth)
+                     Table.putNumber("TapeCenterOfTarget", CenterOfTarget)
+                     Table.putBoolean("TapeNoContoursFound", False)
                      
                  else: #contour not in aspect ratio
-                     Table.putBoolean("PegNoContoursFound", True)
+                     Table.putBoolean("TapeNoContoursFound", True)
 
         except IndexError: #no contours found
-            Table.putBoolean("PegNoContoursFound", True)
-            
-def trackTower():
-    while (True):
-        
-        if(Table.getNumber("PiState", 0) != 1):
-            break
-        else:
-            pass
-        
-        #grab current frame from thread
-        frame1 = vs1.read()
-        
-        #convert to HSV
-        hsv = cv2.cvtColor(frame1, cv2.COLOR_BGR2HSV)
+            Table.putBoolean("TapeNoContoursFound", True)
 
-        #create the range of colour min/max
-        green_range = cv2.inRange(hsv, constants.tower_green_lower, constants.tower_green_upper)
-        
-        try:
-            #grab all contours based on colour range
-            b, contours, _ = cv2.findContours(green_range, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            
-            if len(contours) > 0:
-                #find biggest contour, mark it
-                 green=max(contours, key=cv2.contourArea)
-                 (xg,yg,wg,hg) = cv2.boundingRect(green)
-                 
-                 #find aspect ratio of contour
-                 aspect_ratio1 = float(wg)/hg
-
-                 #set min and max ratios
-                 ratioMax = 3.92
-                 ratioMin = 3.55
-                 
-                 #only run if contour is within ratioValues
-                 if (constants.tower_ratioMin <= aspect_ratio1 <= constants.tower_ratioMax):
-                     CenterOfTargetY = (yg+hg/2)
-                     CenterOfTargetCoordsY = (yg+hg+CenterOfTargetY)
-
-                     #put values to networktable
-                     Table.putNumber("TowerCenterOfTargetCoords", CenterOfTargetCoordsY)
-                     Table.putNumber("TowerCenterOfTarget", CenterOfTargetY)
-                     Table.putBoolean("TowerNoContoursFound", False)
-                     
-                 else: #contour not in aspect ratio
-                     Table.putBoolean("TowerNoContoursFound", True)
-
-        except IndexError: #no contours found
-            Table.putBoolean("TowerNoContoursFound", True)
 
 def piState():
     return Table.getNumber("PiState", 0)
