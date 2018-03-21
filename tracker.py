@@ -44,7 +44,7 @@ def trackCube():
         
                  #find biggest contour, mark it
                  green=max(contours, key=cv2.contourArea)
-                 (xg,yg,wg,hg) = cv2.boundingRect(green)
+                 (x,y,w,h) = cv2.boundingRect(green)
                  
                  #find aspect ratio of contour
                  aspect_ratio1 = float(wg)/hg
@@ -57,9 +57,9 @@ def trackCube():
 
                      #make the largest values always right rect
                      #this prevents negative values when not wanted
-                     CenterOfTarget = (xg+wg)/2
-                     Values = [xg, yg, wg, hg]
-                     TargetWidth = (xg+wg)
+                     Values = [x, y, w, h]
+                     TargetWidth = abs(x+w)
+                     CenterOfTarget = TargetWidth/2
 
                      #put values to networktable
                      Table.putNumber("CubeWidth", TargetWidth)
