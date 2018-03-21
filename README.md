@@ -9,8 +9,9 @@
 	
 ## **The code was used in a virtual environment with the following installed:**
 	*Python 3.4 (Programming Language)
-	*OpenCV 3.1.0 (Vision Tracking Library)
+	*OpenCV 3.4.1 (Vision Tracking Library)
 	*Numpy (Managing numpy arrays from OpenCV)
+	*RobotPy CScore (Camera Server)
 	*PyNetworkTables (Sending and Receiving Data)
 	*imutils (Easy way for camera multithreading)
 
