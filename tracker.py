@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 #grab frames using multithreading
 #and initialize the camera
-vs0 = WebcamVideoStream(src=constants.CubeStream).start()
+vs0 = cv2.VideoCapture(constants.CubeStream)
 vs1 = WebcamVideoStream(src=constants.TapeStream).start()
 
 NetworkTables.initialize(server=constants.ServerIP)
@@ -20,11 +20,6 @@ Table = NetworkTables.getTable(constants.MainTable)
     
 def trackCube():
     while (True):
-    
-        k = cv2.waitKey(1) & 0xFF
-        # press 'q' to exit
-        if k == ord('q'):
-            break
 
         if(Table.getNumber("PiState", 0) != 0):
             break
@@ -32,9 +27,7 @@ def trackCube():
             pass
 
         #grab current frame from multithreaded process
-        frame0 = vs0.read()
-        
-        #convert to HSV
+        ret, frame0 = vs0.read()
         hsv = cv2.cvtColor(frame0, cv2.COLOR_BGR2HSV)
 
         #create the range of colour min/max
@@ -42,6 +35,7 @@ def trackCube():
 
         #create blank area for sort
         areaArray = []
+        print("Tracking Robot")
         try:
             #grab all contours based on colour range
             b, contours, _ = cv2.findContours(green_range, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -64,10 +58,12 @@ def trackCube():
                      #make the largest values always right rect
                      #this prevents negative values when not wanted
                      CenterOfTarget = (xg+wg)/2
+                     Values = [xg, yg, wg, hg]
                      TargetWidth = (xg+wg)
 
                      #put values to networktable
                      Table.putNumber("CubeWidth", TargetWidth)
+                     Table.putNumberArray("Values", Values)
                      Table.putNumber("CubeCenterOfTarget", CenterOfTarget)
                      Table.putBoolean("CubeNoContoursFound", False)
                      
